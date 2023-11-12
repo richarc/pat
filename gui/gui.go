@@ -1,15 +1,13 @@
 package gui
 
 import (
-	"fmt"
 	"log"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
-	"github.com/go-resty/resty/v2"
-	"github.com/richarc/pat/conn"
 )
 
 // PatApp is a structure representing the core elements of the Pat application
@@ -33,14 +31,7 @@ func init() {
 // it calls two additional functions to create the request form and the response text
 func (p PatApp) MakeUI() fyne.CanvasObject {
 
-	// the text widget that we will write the
-	response_text := func() *widget.TextGrid {
-		grid := widget.NewTextGrid()
-		grid.SetText("Response text goes here")
-		return grid
-	}()
-
-	// list of options for the selct GET, POST etc..
+	// list of options for the select GET, POST etc..
 	actions := []string{"GET", "POST"}
 	sel := widget.NewSelect(actions, func(value string) {
 		log.Println("Select set to", value)
@@ -53,44 +44,41 @@ func (p PatApp) MakeUI() fyne.CanvasObject {
 	radio.SetSelected("https")
 	radio.Horizontal = true
 
+	// this container combines the select drop down and radio button into a container
+	// for the right side of a form layout
+	method_proto := container.New(layout.NewGridLayout(2), sel, radio)
+
 	//The Host entry field
 	host_entry := widget.NewEntry()
-	host_entry.SetPlaceHolder("Enter the host name or IP Address...")
+	host_entry.SetPlaceHolder("Enter the host name or IP Address... host:port...")
 
-	//The Host entry field
-	uri_entry := widget.NewEntry()
-	uri_entry.SetPlaceHolder("Enter the URI and query string...")
+	//The path entry for for setting the URI componenet of the URL
+	path_entry := widget.NewEntry()
+	path_entry.SetPlaceHolder("Enter the URI componenet with leading / ...")
 
-	request_form := &widget.Form{
-		Items: []*widget.FormItem{
-			{Text: "Select HTTP Method:", Widget: sel},
-			{Text: "Select HTTP or HTTPS:", Widget: radio},
-			{Text: "Enter the Host Address:", Widget: host_entry},
-			{Text: "Enetr the URI and Query Componenet:", Widget: uri_entry},
-		},
-		OnSubmit: func() {
-			// construct the URL and check for errors
-			url, err := constructURL(radio.Selected, host_entry.Text, uri_entry.Text, "")
-			if err != nil {
-				log.Println("error in URL")
-			}
-			// make the request
-			resp, err := makeRequest(sel.Selected, url)
-			if err != nil {
-				log.Println(err)
-			}
-			log.Println(resp)
-			//display the respons in the responsetext widget
-			response_text.SetText(fmt.Sprintf("%+v", resp))
-		},
-		OnCancel: func() {
-			log.Println("Cancel Clicked")
-		},
-		SubmitText: "Run",
-		CancelText: "Reset",
-	}
+	path_label := widget.NewLabel("Enter URI:")
 
-	main_container := container.NewVBox(request_form, widget.NewSeparator(), response_text)
+	// this container combines a label and a spacer for the left side of line 2 of the form layout
+	space_label := container.New(layout.NewGridLayout(3), layout.NewSpacer(), layout.NewSpacer(), path_label)
+
+	//The query string
+	query_entry := widget.NewEntry()
+	query_entry.SetPlaceHolder("Enter the query string...")
+
+	//prior to here is entry form elements
+	//
+	//following is the text grid widget that holds the response from the query
+
+	result_text := widget.NewTextGrid()
+	result_text.SetText("Now is the time for all food men...")
+
+	main_container := container.NewVBox(
+		container.New(layout.NewFormLayout(), method_proto, host_entry,
+			space_label, path_entry),
+		widget.NewSeparator(),
+		result_text,
+	)
+
 	return main_container
 }
 
@@ -98,7 +86,8 @@ func (p PatApp) MakeUI() fyne.CanvasObject {
 //
 // functions from here are actions required to create the request and display the response
 
-// constructURL takes the Dorm data and constructs a valid URL
+/*
+// constructURL takes the form data and constructs a valid URL
 // the function also validates that the elements are valid URL components
 // returns a validated URL
 func constructURL(scheme, host, path, query string) (string, error) {
@@ -125,3 +114,5 @@ func makeRequest(method, url string) (*resty.Response, error) {
 //func responseText(resp *resty.Response) string {
 //	return fmt.Sprintf("%+v", resp)
 //}
+
+*/
